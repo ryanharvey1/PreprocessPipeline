@@ -108,6 +108,11 @@ cancellation of active Stages in the current Run. Keep logs and Run metadata und
 <local-working-directory>/.pipeline/<run-id>/
 ```
 
+On Windows, an optional [overnight Phy watchdog](docs/cli.md#recover-an-overnight-gpu-wait-caused-by-phy-windows)
+can back up, save, verify, and close an idle Phy session when it is holding a GPU
+needed by a local Sorting Stage. It works across terminals and is disabled by
+default.
+
 ## Resume and save outputs
 
 Use **Browse local session to resume** and select the processed session directory

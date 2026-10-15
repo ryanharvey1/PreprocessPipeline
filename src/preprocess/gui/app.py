@@ -118,6 +118,7 @@ from .anatomical_map import (
     save_anatomical_map_csv,
 )
 from .preflight import CheckResult, run_preflight
+from .phy_watchdog import PhyWatchdogControl
 from .run_pipeline import ERROR_PREFIX, RESULT_PREFIX
 
 
@@ -3152,6 +3153,9 @@ class MainWindow(QMainWindow):
         manual_layout.addWidget(self.cell_explorer_folders_summary, 1, 1)
         manual_layout.addWidget(select_cell_explorer_folders, 1, 2)
         manual_layout.addWidget(cell_explorer_hint, 2, 0, 1, 3)
+        self.phy_watchdog_control = PhyWatchdogControl()
+        self.phy_watchdog_control.status_message.connect(lambda message: self._append_log(message + "\n"))
+        manual_layout.addWidget(self.phy_watchdog_control, 3, 0, 1, 3)
         manual_layout.setColumnStretch(1, 1)
 
         layout.addWidget(self.ephys_tabs, 1)

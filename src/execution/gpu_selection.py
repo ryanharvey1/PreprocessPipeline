@@ -281,6 +281,24 @@ def activate_least_used_gpu(
     query: Callable[[], list[GpuDevice]] = query_gpu_devices,
     sleeper: Callable[[float], None] = time.sleep,
 ) -> dict[str, object]:
+    from src.phy_watchdog import GpuWaitPublisher
+
+    with GpuWaitPublisher(Path(log_path)) as publisher:
+        return _activate_least_used_gpu(
+            log_path=log_path, busy_percent=busy_percent, poll_seconds=poll_seconds,
+            query=query, sleeper=sleeper, publish_wait=publisher.update,
+        )
+
+
+def _activate_least_used_gpu(
+    *,
+    log_path: Path,
+    busy_percent: float,
+    poll_seconds: float,
+    query: Callable[[], list[GpuDevice]],
+    sleeper: Callable[[float], None],
+    publish_wait: Callable[[dict], None],
+) -> dict[str, object]:
     if not 0.0 < float(busy_percent) <= 100.0:
         raise ValueError("busy_percent must be in (0, 100]")
     if float(poll_seconds) <= 0:
@@ -316,6 +334,7 @@ def activate_least_used_gpu(
             "gpus": [asdict(device) for device in devices],
         }
         _append_event(Path(log_path), event)
+        publish_wait(event)
         print("[GPU selection] " + " | ".join(_device_line(device) for device in devices), flush=True)
 
         if selected is not None:

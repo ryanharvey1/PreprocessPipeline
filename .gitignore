@@ -52,6 +52,7 @@ tests
 !/tests/gui/
 /tests/gui/*
 !/tests/gui/test_gui_config_model.py
+!/tests/gui/test_phy_watchdog_control.py
 !/tests/gui/test_gui_move_outputs.py
 !/tests/matlab/
 /tests/matlab/*
@@ -65,6 +66,7 @@ tests
 /tests/execution/*
 !/tests/execution/test_local_backend.py
 !/tests/execution/test_gpu_selection.py
+!/tests/execution/test_phy_watchdog.py
 !/tests/execution/test_torch_allocator_default.py
 !/tests/execution/test_input_identity.py
 !/tests/execution/test_progress.py

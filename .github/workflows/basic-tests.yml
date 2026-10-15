@@ -68,9 +68,12 @@ jobs:
               "tests/execution/test_input_identity.py",
               "tests/execution/test_progress.py",
               "tests/execution/test_headless_plotting.py",
+              "tests/execution/test_gpu_selection.py",
+              "tests/execution/test_phy_watchdog.py",
           ]
           # GUI state must not carry into process-pool regression tests.
           gui_tests = [
+              "tests/gui/test_phy_watchdog_control.py",
               "tests/preprocess/test_chanmap_preservation.py",
               "tests/gui/test_gui_config_model.py::test_persistent_progress_updates_preserve_lines_across_polls",
               "tests/gui/test_gui_config_model.py::test_persistent_progress_uses_stage_rows_main_log_and_force_stop",

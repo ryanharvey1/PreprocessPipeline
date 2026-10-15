@@ -17,6 +17,114 @@ The installed controller command is also available as
 `python -m src.execution.controller`. `preprocess-stage-worker` is launched by
 the controller and is not the normal way to start a session.
 
+## Recover an overnight GPU wait caused by Phy (Windows)
+
+An optional cooperative Phy plugin can save and close an idle Phy session when
+a persistent local Sorting Stage is waiting for the GPU. It works when Phy was
+launched from another terminal; both processes must use the same Windows user
+and default `~/.phy/` configuration directory. It uses no model/API or separate
+scheduled agent. Direct foreground sorter routes do not publish recovery signals.
+
+In the GUI, open **Ephys > Manual Curation** and click **Enable automatic Phy
+closing**. The button installs and enables the plugin in one step. It then
+becomes **Disable automatic Phy closing**; clicking it switches recovery off
+without removing your plugins. Hover over the button or its on/off status for an
+explanation and the saved hours and wait/idle durations, even while disabled.
+This is a setting for your Windows user and persists across GUI launches and
+session configurations. Opening the GUI alone does not install
+or enable recovery. Restart any already-open Phy sessions after first enabling;
+new pipeline runs from the updated GUI publish recovery signals automatically.
+
+Alternatively, from this checkout, using a Python environment on your PATH:
+
+```powershell
+python scripts/install_phy_watchdog.py
+```
+
+Installation preserves existing plugins, backs up `~/.phy/phy_config.py`, and
+starts **disabled**. Enable it explicitly when ready:
+
+```powershell
+python scripts/install_phy_watchdog.py --enable
+```
+
+After CLI installation, restart Phy and the pipeline GUI/controller. Already open
+Phy sessions cannot load the plugin retroactively, and already running workers
+cannot pick up the new publisher code. Subsequent Phy launches using the default configuration
+load it automatically, including ordinary `phy template-gui params.py` commands.
+Re-run the installer after updating the watchdog source to refresh its installed
+copy.
+
+Settings are in `~/.phy/pipeline-watchdog/settings.json`:
+
+```json
+{
+  "enabled": true,
+  "start_hour": 22,
+  "end_hour": 8,
+  "wait_seconds": 900,
+  "idle_seconds": 1800
+}
+```
+
+Hours use the computer's local clock; the default window is 10 p.m. through
+8 a.m., ending at 8 a.m. Equal start/end hours allow any time of day. Wait and
+idle durations must each be at least 60 seconds. Changes take effect without
+restarting a loaded plugin. Disable closing with the GUI's **Disable automatic
+Phy closing** button, or:
+
+```powershell
+python scripts/install_phy_watchdog.py --disable
+```
+
+The plugin only acts when a fresh same-host GPU-wait heartbeat names its own
+process PID on a busy GPU, the waiting worker is still alive with the same process
+creation time, the wait has lasted at least 15 minutes, Phy has had
+no input or curation changes for 30 minutes, and it has no busy/pending action or
+modal/popup dialog. GPU utilization alone does not establish idleness. Windows
+may omit process details; if Phy's exact PID is absent, recovery does not act.
+Slurm workers do not publish signals.
+
+Before closing, it copies `spike_clusters.npy` and `cluster_*.tsv` into
+`<Phy dataset>/.phy/pipeline-watchdog-backups/<timestamp-id>/`, emits Phy's normal
+Save event (including plugin save callbacks), and compares saved assignments and
+labels with the live supervisor. Save, backup, or verification failures leave
+Phy open. It makes at most one recovery attempt per idle period, never kills a
+process, and never chooses an answer in a save dialog. It rechecks activity and
+the wait after saving. Other programs may continue holding the GPU; the sorting
+worker continues its normal polling and starts only if its existing GPU gate
+permits it. The GPU admission threshold is unchanged.
+
+Each backup contains only the saved spike assignments and cluster tables, not
+the recording, templates, or waveforms. Its size is the combined size of
+`spike_clusters.npy` and `cluster_*.tsv`; for example, 10 million spikes stored as
+32-bit cluster IDs take about 40 MB plus the tables. Backups accumulate without
+automatic pruning and are included when copying the entire session. They live
+inside Phy's cache directory, so clearing `.phy` or rerunning Kilosort into the
+same output directory can remove them. They are recovery copies rather than
+permanent archival backups. Sorting and postprocessing read the normal output
+files and ignore the nested backup folder.
+
+Review morning results in `~/.phy/pipeline-watchdog/events.jsonl`. Each event
+includes the dataset, Phy PID, originating GPU log, and/or backup/error details.
+The Sorting Attempt's `gpu-selection.jsonl` records whether the GPU subsequently
+became available. Heartbeats expire after 90 seconds and are removed on selection
+or normal worker failure. Dead workers and reused worker PIDs are rejected even
+before their heartbeats expire. A cancellation or failure racing the final check
+may still result in a verified save and close, without starting a sorter early.
+
+Validation with installed Phy, using disposable data and a hidden Qt window:
+
+```powershell
+# Run with the Python environment used by Phy (PyQt5), not the pipeline's PySide6.
+python scripts/check_phy_watchdog.py
+```
+
+This checks plugin discovery, a real Phy Supervisor merge/label save, the
+BaseController save handler, backups, and Qt closing. It does not exercise a full
+TemplateGUI on a real recording or prove that closing releases GPU memory on a
+particular Windows driver.
+
 ## Direct single-day run
 
 The easiest starting point is a JSON file saved through the GUI's **Save config**.

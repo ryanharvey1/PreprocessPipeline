@@ -23,6 +23,18 @@ MATLAB tests are run separately.
 These are existing regression tests. They do not establish real-data pipeline,
 GPU sorter, Slurm cluster, or interactive GUI correctness.
 
+The overnight Phy watchdog is covered by
+`tests/execution/test_gpu_selection.py`, `tests/execution/test_phy_watchdog.py`,
+and `tests/gui/test_phy_watchdog_control.py`. These use simulated GPU waits,
+temporary configurations/datasets, and hidden PySide6 windows; they never close
+a user's Phy session. CI runs the execution tests in its pipeline process and
+the control tests in its separate GUI process on Linux and Windows. A separate,
+optional `python scripts/check_phy_watchdog.py` check uses the Python environment
+installed with Phy (PyQt5) to exercise plugin discovery, actual Supervisor edits
+and saving, backups, and a hidden Phy GUI close. Phy is not a CI dependency, and
+that check does not establish live GPU-memory release or full TemplateGUI
+correctness.
+
 Useful regression cases are retained even when they need an optional environment.
 The POSIX permission-bit check is skipped on Windows because it does not test
 Windows ACLs. Symlink tests require permission to create symlinks.
